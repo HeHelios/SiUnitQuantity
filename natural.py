@@ -1,18 +1,29 @@
+class Constants:
+    SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "temperature": "K"}
+
 class SiUnitQuantity:
-    def __init__(self, magnitude = 1.0, mass_exp = 0, len_exp = 0, time_exp = 0, curr_exp = 0, temp_exp = 0):
-        self.mass_exp = mass_exp
-        self.len_exp = len_exp
-        self.time_exp = time_exp
-        self.curr_exp = curr_exp
-        self.temp_exp = temp_exp
+    def __init__(self, magnitude = 1.0, exponents = {"mass": 0, "length": 0, "time": 0, "current": 0, "temperature": 0}):
+        self.exponents = exponents
+        for unit in Constants.SI_BASIC_UNITS:
+            if unit not in self.exponents:
+                self.exponents[unit] = 0
         self.magnitude = magnitude
 
     def is_unitless(self):
-        return self.mass_exp == self.len_exp == self.time_exp == self.curr_exp == self.temp_exp == 0
+        return all(val == 0 for val in self.exponents.values())
 
     def match_units(self, other):
-        return self.mass_exp == other.mass_exp and self.len_exp == other.len_exp and self.time_exp == other.time_exp and self.curr_exp == other.curr_exp and self.temp_exp == other.temp_exp
+        return self.exponents == other.exponents
 
+    def __eq__(self, other):
+        if not isinstance(other, SiUnitQuantity):
+            if self.is_unitless():
+                return self.magnitude == right
+            else:
+                raise TypeError("Unit mismatch in comparing SiUnitQuantity and a non-SiUnitQuantity")
+        if not self.match_units(right):
+            raise TypeError("Unit mismatch in comparing two SiUnitQuantities")
+        return self.magnitude == right.magnitude
 
     def __str__(self):
         result = str(self.magnitude) + ' '
@@ -42,12 +53,8 @@ class SiUnitQuantity:
                     denominator += name + '^' + str(-unit_exp) + ' * '
                 denominator_num += 1
 
-        
-        out_func(self.mass_exp, 'kg')
-        out_func(self.len_exp, 'm')
-        out_func(self.time_exp, 's')
-        out_func(self.curr_exp, 'A')
-        out_func(self.temp_exp, 'K')
+        for unit in Constants.SI_BASIC_UNITS:
+            out_func(self.exponents[unit], Constants.SI_BASIC_UNITS[unit])
 
         
         if numerator_num == 0:
@@ -83,7 +90,7 @@ class SiUnitQuantity:
                 raise TypeError("Unit mismatch in adding SiUnitQuantity and a non-SiUnitQuantity")
         if not self.match_units(right):
             raise TypeError("Unit mismatch in adding two SiUnitQuantities")
-        return SiUnitQuantity(magnitude = self.magnitude + right.magnitude, mass_exp = self.mass_exp, len_exp = self.len_exp, time_exp = self.time_exp, curr_exp = self.curr_exp, temp_exp = self.temp_exp)
+        return SiUnitQuantity(magnitude = self.magnitude + right.magnitude, exponents = dict(self.exponents))
 
     def __radd__(self, right):
         return self + right
@@ -97,16 +104,16 @@ class SiUnitQuantity:
                 raise TypeError("Unit mismatch in adding SiUnitQuantity and a non-SiUnitQuantity")
         if not self.match_units(right):
             raise TypeError("Unit mismatch in adding two SiUnitQuantities")
-        return SiUnitQuantity(magnitude = self.magnitude - right.magnitude, mass_exp = self.mass_exp, len_exp = self.len_exp, time_exp = self.time_exp, curr_exp = self.curr_exp, temp_exp = self.temp_exp)
+        return SiUnitQuantity(magnitude = self.magnitude - right.magnitude, exponents = dict(self.exponents))
 
     def __rsub__(self, right):
         return right - self
     
     def __mul__(self, right):
-        return SiUnitQuantity(self.magnitude * right.magnitude, mass_exp = self.mass_exp + right.mass_exp, len_exp = self.len_exp + right.len_exp, time_exp = self.time_exp + right.time_exp, curr_exp = self.curr_exp + right.curr_exp, temp_exp = self.temp_exp + right.temp_exp)
+        return SiUnitQuantity(self.magnitude * right.magnitude, exponents = {unit: self.exponents[unit] + right.exponents[unit] for unit in self.exponents})
 
     def __truediv__(self, right):
-        return SiUnitQuantity(self.magnitude / right.magnitude, mass_exp = self.mass_exp - right.mass_exp, len_exp = self.len_exp - right.len_exp, time_exp = self.time_exp - right.time_exp, curr_exp = self.curr_exp - right.curr_exp, temp_exp = self.temp_exp - right.temp_exp)
+        return SiUnitQuantity(self.magnitude / right.magnitude, exponents = {unit: self.exponents[unit] - right.exponents[unit] for unit in self.exponents})
 
     def __rtruediv__(self, right):
         return right / self
@@ -115,9 +122,9 @@ class SiUnitQuantity:
         if not isinstance(right, (int, float, SiUnitQuantity)):
             raise ValueError('Only number can be a power.')
         if isinstance(right, (int, float)):
-            return SiUnitQuantity(magnitude = self.magnitude ** right, mass_exp = self.mass_exp * right, len_exp = self.len_exp  * right, time_exp = self.time_exp * right, curr_exp = self.curr_exp * right, temp_exp = self.temp_exp * right)
+            return SiUnitQuantity(magnitude = self.magnitude ** right, exponents = {unit: self.exponents[unit] * right for unit in self.exponents})
         elif isinstance(right, SiUnitQuantity) and right.is_unitless():
-            return SiUnitQuantity(magnitude = self.magnitude ** right.magnitude, mass_exp = self.mass_exp * right.magnitude, len_exp = self.len_exp  * right.magnitude, time_exp = self.time_exp * right.magnitude, curr_exp = self.curr_exp * right.magnitude, temp_exp = self.temp_exp * right.magnitude) 
+            return SiUnitQuantity(magnitude = self.magnitude ** right.magnitude, exponents = {unit: self.exponents[unit] * right.magnitude for unit in self.exponents}) 
         else:
             raise ValueError('Needs unitless number for a power.')
     
