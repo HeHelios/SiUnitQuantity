@@ -15,15 +15,6 @@ class SiUnitQuantity:
     def match_units(self, other):
         return self.exponents == other.exponents
 
-    def __eq__(self, other):
-        if not isinstance(other, SiUnitQuantity):
-            if self.is_unitless():
-                return self.magnitude == right
-            else:
-                raise TypeError("Unit mismatch in comparing SiUnitQuantity and a non-SiUnitQuantity")
-        if not self.match_units(right):
-            raise TypeError("Unit mismatch in comparing two SiUnitQuantities")
-        return self.magnitude == right.magnitude
 
     def __str__(self):
         result = str(self.magnitude) + ' '
@@ -81,7 +72,7 @@ class SiUnitQuantity:
         result += numerator + '/' + denominator
         return result
 
-
+    #arithmetics
     def __add__(self, right):
         if not isinstance(right, SiUnitQuantity):
             if self.is_unitless():
@@ -101,43 +92,118 @@ class SiUnitQuantity:
             if self.is_unitless():
                 return SiUnitQuantity(magnitude = self.magnitude - right)
             else:
-                raise TypeError("Unit mismatch in adding SiUnitQuantity and a non-SiUnitQuantity")
+                raise TypeError("Unit mismatch in substructing SiUnitQuantity and a non-SiUnitQuantity")
         if not self.match_units(right):
-            raise TypeError("Unit mismatch in adding two SiUnitQuantities")
-        return SiUnitQuantity(magnitude = self.magnitude - right.magnitude, exponents = dict(self.exponents))
+            raise TypeError("Unit mismatch in substructing two SiUnitQuantities")
+        return SiUnitQuantity(magnitude = self.magnitude - right.magnitude, mass_exp = self.mass_exp, len_exp = self.len_exp, time_exp = self.time_exp, curr_exp = self.curr_exp, temp_exp = self.temp_exp)
 
     def __rsub__(self, right):
-        return right - self
+        if not isinstance(right, SiUnitQuantity):
+            if self.is_unitless():
+                return SiUnitQuantity(magnitude = right - self.magnitude)
+            raise TypeError("Unit mismatch in substructing SiUnitQuantity and a non-SiUnitQuantity")
+
     
     def __mul__(self, right):
-        return SiUnitQuantity(self.magnitude * right.magnitude, exponents = {unit: self.exponents[unit] + right.exponents[unit] for unit in self.exponents})
+        if not isinstance(right, SiUnitQuantity):
+            return SiUnitQuantity(self.magnitude * right, mass_exp = self.mass_exp, len_exp = self.len_exp, time_exp = self.time_exp, curr_exp = self.curr_exp, temp_exp = self.temp_exp)              
+        return SiUnitQuantity(self.magnitude * right.magnitude, mass_exp = self.mass_exp + right.mass_exp, len_exp = self.len_exp + right.len_exp, time_exp = self.time_exp + right.time_exp, curr_exp = self.curr_exp + right.curr_exp, temp_exp = self.temp_exp + right.temp_exp)
+
+    def __rmul__(self, right):
+        return self*right
 
     def __truediv__(self, right):
-        return SiUnitQuantity(self.magnitude / right.magnitude, exponents = {unit: self.exponents[unit] - right.exponents[unit] for unit in self.exponents})
+        if not isinstance(right, SiUnitQuantity):
+            return SiUnitQuantity(self.magnitude / right, mass_exp = self.mass_exp, len_exp = self.len_exp, time_exp = self.time_exp, curr_exp = self.curr_exp, temp_exp = self.temp_exp)
+        return SiUnitQuantity(self.magnitude / right.magnitude, mass_exp = self.mass_exp - right.mass_exp, len_exp = self.len_exp - right.len_exp, time_exp = self.time_exp - right.time_exp, curr_exp = self.curr_exp - right.curr_exp, temp_exp = self.temp_exp - right.temp_exp)
 
     def __rtruediv__(self, right):
-        return right / self
+        if not isinstance(right, SiUnitQuantity):
+            return SiUnitQuantity(right/self.magnitude, mass_exp = -self.mass_exp, len_exp = -self.len_exp, time_exp = -self.time_exp, curr_exp = -self.curr_exp, temp_exp = -self.temp_exp)
 
     def __pow__(self, right):
-        if not isinstance(right, (int, float, SiUnitQuantity)):
-            raise ValueError('Only number can be a power.')
-        if isinstance(right, (int, float)):
-            return SiUnitQuantity(magnitude = self.magnitude ** right, exponents = {unit: self.exponents[unit] * right for unit in self.exponents})
+        if not isinstance(right, SiUnitQuantity):
+            return SiUnitQuantity(magnitude = self.magnitude ** right, mass_exp = self.mass_exp * right, len_exp = self.len_exp  * right, time_exp = self.time_exp * right, curr_exp = self.curr_exp * right, temp_exp = self.temp_exp * right)
         elif isinstance(right, SiUnitQuantity) and right.is_unitless():
-            return SiUnitQuantity(magnitude = self.magnitude ** right.magnitude, exponents = {unit: self.exponents[unit] * right.magnitude for unit in self.exponents}) 
+            return SiUnitQuantity(magnitude = self.magnitude ** right.magnitude, mass_exp = self.mass_exp * right.magnitude, len_exp = self.len_exp  * right.magnitude, time_exp = self.time_exp * right.magnitude, curr_exp = self.curr_exp * right.magnitude, temp_exp = self.temp_exp * right.magnitude) 
         else:
             raise ValueError('Needs unitless number for a power.')
     
     def __rpow__(self, right):
         if self.is_unitless():
             return right ** self.magnitude
-        else:
-            raise ValueError('Needs unitless number for a power.')
-           
+        raise ValueError('Needs unitless number for a power.')
+        
+    #equalities and inequalities
+    def __eq__(self, other):
+        if not isinstance(other, SiUnitQuantity):
+            if self.is_unitless():
+                return self.magnitude == other
+            else:
+                raise TypeError("Unit mismatch in comparing SiUnitQuantity and a non-SiUnitQuantity")
+        if not self.match_units(other):
+            raise TypeError("Unit mismatch in comparing two SiUnitQuantities")
+        return self.magnitude == other.magnitude
+
+    def __ne__(self, other):
+        return not self == other
+        
+    def __lt__(self, right):  #<
+        if not isinstance(right, SiUnitQuantity):
+            if self.is_unitless():
+                return self.magnitude < right
+            raise ValueError('Quantities with different units cannot be compared.')
+        
+        if self.match_units(right):
+            return self.magnitude < right.magnitude
+        raise ValueError('Quantities with different units cannot be compared')
+    
+
+    def __gt__(self, right):  #>
+        if not isinstance(right, SiUnitQuantity):
+            if self.is_unitless():
+                return self.magnitude > right
+            raise ValueError('Quantities with different units cannot be compared.')
+        
+        if self.match_units(right):
+            return self.magnitude > right.magnitude
+        raise ValueError('Quantities with different units cannot be compared')
+        
+    def __le__(self, right):  #<=
+        if not isinstance(right, SiUnitQuantity):
+            if self.is_unitless():
+                return self.magnitude <= right
+            raise ValueError('Quantities with different units cannot be compared.')
+        
+        if self.match_units(right):
+            return self.magnitude <= right.magnitude
+        raise ValueError('Quantities with different units cannot be compared')            
+
+    def __ge__(self, right):  #>=
+        if not isinstance(right, SiUnitQuantity):
+            if self.is_unitless():
+                return self.magnitude >= right
+            raise ValueError('Quantities with different units cannot be compared.')
+        
+        if self.match_units(right):
+            return self.magnitude >= right.magnitude
+        raise ValueError('Quantities with different units cannot be compared')
+        
+#    def __abs__(self):
+        
+#    def __int__(self):
+
+#    def __float__(self):
+
+#    def __round__(self):
+
+#    def int_units(self):    #Converts float exponents to int expotnents
+
+
 
 if __name__ == '__main__':
-    x = 2
-    #x = SiUnitQuantity(5, len_exp = 1, time_exp = -1)
-    y = SiUnitQuantity(2)
-    x = x ** y
-    print(x)
+ 
+    x = SiUnitQuantity(5)
+    y = 2
+
+    print(y >= x)
