@@ -13,6 +13,7 @@ class SiUnitQuantity:
     def match_units(self, other):
         return self.mass_exp == other.mass_exp and self.len_exp == other.len_exp and self.time_exp == other.time_exp and self.curr_exp == other.curr_exp and self.temp_exp == other.temp_exp
 
+
     def __str__(self):
         result = str(self.magnitude) + ' '
         
@@ -87,22 +88,49 @@ class SiUnitQuantity:
     def __radd__(self, right):
         return self + right
 
-#    def __sub__(self, right):
-#        return Sub(self, right)
 
-#    def __mul__(self, right):
-#        return Mul(self, right)
+    def __sub__(self, right):
+        if not isinstance(right, SiUnitQuantity):
+            if self.is_unitless():
+                return SiUnitQuantity(magnitude = self.magnitude - right)
+            else:
+                raise TypeError("Unit mismatch in adding SiUnitQuantity and a non-SiUnitQuantity")
+        if not self.match_units(right):
+            raise TypeError("Unit mismatch in adding two SiUnitQuantities")
+        return SiUnitQuantity(magnitude = self.magnitude - right.magnitude, mass_exp = self.mass_exp, len_exp = self.len_exp, time_exp = self.time_exp, curr_exp = self.curr_exp, temp_exp = self.temp_exp)
 
- #   def __truediv__(self, right):
- #       return Div(self, right)
+    def __rsub__(self, right):
+        return right - self
+    
+    def __mul__(self, right):
+        return SiUnitQuantity(self.magnitude * right.magnitude, mass_exp = self.mass_exp + right.mass_exp, len_exp = self.len_exp + right.len_exp, time_exp = self.time_exp + right.time_exp, curr_exp = self.curr_exp + right.curr_exp, temp_exp = self.temp_exp + right.temp_exp)
 
-  #  def __rtruediv__(self, right):
-  #      return Div(right, self)
+    def __truediv__(self, right):
+        return SiUnitQuantity(self.magnitude / right.magnitude, mass_exp = self.mass_exp - right.mass_exp, len_exp = self.len_exp - right.len_exp, time_exp = self.time_exp - right.time_exp, curr_exp = self.curr_exp - right.curr_exp, temp_exp = self.temp_exp - right.temp_exp)
 
+    def __rtruediv__(self, right):
+        return right / self
 
+    def __pow__(self, right):
+        if not isinstance(right, (int, float, SiUnitQuantity)):
+            raise ValueError('Only number can be a power.')
+        if isinstance(right, (int, float)):
+            return SiUnitQuantity(magnitude = self.magnitude ** right, mass_exp = self.mass_exp * right, len_exp = self.len_exp  * right, time_exp = self.time_exp * right, curr_exp = self.curr_exp * right, temp_exp = self.temp_exp * right)
+        elif isinstance(right, SiUnitQuantity) and right.is_unitless():
+            return SiUnitQuantity(magnitude = self.magnitude ** right.magnitude, mass_exp = self.mass_exp * right.magnitude, len_exp = self.len_exp  * right.magnitude, time_exp = self.time_exp * right.magnitude, curr_exp = self.curr_exp * right.magnitude, temp_exp = self.temp_exp * right.magnitude) 
+        else:
+            raise ValueError('Needs unitless number for a power.')
+    
+    def __rpow__(self, right):
+        if self.is_unitless():
+            return right ** self.magnitude
+        else:
+            raise ValueError('Needs unitless number for a power.')
+           
 
 if __name__ == '__main__':
-    x = SiUnitQuantity(5, mass_exp = 1, len_exp = 2, time_exp = -2, temp_exp = -1)
-    y = SiUnitQuantity(10, len_exp = 1, time_exp = -1)
-    
+    x = 2
+    #x = SiUnitQuantity(5, len_exp = 1, time_exp = -1)
+    y = SiUnitQuantity(2)
+    x = x ** y
     print(x)
