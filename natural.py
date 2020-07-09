@@ -194,21 +194,25 @@ class SiUnitQuantity:
             return self.magnitude >= right.magnitude
         raise ValueError('Quantities with different units cannot be compared')
         
-#    def __abs__(self):
-        
-#    def __int__(self):
-
-#    def __float__(self):
-
-#    def __round__(self):
-
-#    def int_units(self):    #Converts float exponents to int expotnents
-
-
+    def __abs__(self):
+        return SiUnitQuantity(magnitude = abs(self.magnitude), exponents = self.exponents)
+    
+    def __int__(self):
+        return int(self.magnitude)
+    
+    def __float__(self):
+        return float(self.magnitude)
+    
+    def __round__(self, digits = 0):
+        return SiUnitQuantity(magnitude = round(self.magnitude, digits), exponents = self.exponents)
+    
+    def int_units(self):    #Converts float exponents to int expotnents
+        new_exponents = {key : int(self.exponents[key]) for key in self.exponents.keys()}
+        return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)
 
 if __name__ == '__main__':
  
-    x = SiUnitQuantity(5, exponents = {"length": 1, "time": -1})
-    y = SiUnitQuantity(5)
+    x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
+    y = SiUnitQuantity(2.0)
 
-    print(x ** y)
+    print((x**y).int_units())
