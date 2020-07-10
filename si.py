@@ -36,9 +36,11 @@ class Units:
     
     _SI_DEPENDENT_UNITS = {"Hz": Hz, "N": N, "J": J, "W": W, "Pa": Pa, \
                           "C": C, "V": V, "F": F, "Ohm": Ohm, \
-                          "T": T, "H": H, }
+                          "T": T, "H": H, "g": 1e-3 * kg}
     
-    BASIC_PREFIX = {}
+    BASIC_PREFIX = {"Y" : 1e24, "Z": 1e21, "E": 1e18, "P": 1e15, "T": 1e12, "G": 1e9, \
+                    "M": 1e6, "k": 1e3, "c": 1e-2, "m": 1e-3, "u": 1e-6, "n": 1e-9, \
+                    "p": 1e-12, "f": 1e-15, "a": 1e-18, "z": 1e-21, "y":1e-24}
     
     USER_UNITS = {"1": SiUnitQuantity(1), }
     
@@ -171,6 +173,8 @@ def new(unit):
     for i in range(1, len(elems)):
         if elems[i] in Units.ALL_UNITS:
             elems[i] = Units.ALL_UNITS[elems[i]]
+        elif (elems[i][0] in Units.BASIC_PREFIX) and (elems[i][1:] in Units.ALL_UNITS):
+            elems[i] = Units.BASIC_PREFIX[elems[i][0]] * Units.ALL_UNITS[elems[i][1:]]
         elif elems[i] in SPECIAL:
             pass
         else:
@@ -185,4 +189,4 @@ if __name__ == '__main__':
     x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
     y = SiUnitQuantity(2.0)
 
-    print(new("1.5 kg * m / s"))
+    print(new("1.5 g / ms"))
