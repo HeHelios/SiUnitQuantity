@@ -32,15 +32,20 @@ class Units:
     H = Ohm * s
     
     #For internal code
-    __SI_BASIC_UNITS = {"kg": kg, "m": m, "s": s, "A": A, "K": K, "mol": mol}
+    _SI_BASIC_UNITS = {"kg": kg, "m": m, "s": s, "A": A, "K": K, "mol": mol}
     
-    __SI_DEPENDENT_UNITS = {"Hz": Hz, "N": N, "J": J, "W": W, "Pa": Pa, \
+    _SI_DEPENDENT_UNITS = {"Hz": Hz, "N": N, "J": J, "W": W, "Pa": Pa, \
                           "C": C, "V": V, "F": F, "Ohm": Ohm, \
                           "T": T, "H": H, }
     
     BASIC_PREFIX = {}
     
-    USER_UNITS = {}
+    USER_UNITS = {"1": SiUnitQuantity(1), }
+    
+    ALL_UNITS = _SI_BASIC_UNITS.copy() 
+    ALL_UNITS.update(_SI_DEPENDENT_UNITS)
+    ALL_UNITS.update(USER_UNITS)
+    
 class Constants:
     
     kg = Units.kg
@@ -78,8 +83,7 @@ class Constants:
 def new(unit):
     
     def parser(string):
-        SPECIAL = {"(", ")", "*", "/"}
-        
+        #processes the string to meaningfull elements list
         result = ["",]
         L = len(string)
         if L == 0:
@@ -87,6 +91,8 @@ def new(unit):
         
         for i in range(L):
             if string[i] == " ":
+                if len(result) == 1:
+                    result += ["",]
                 continue
             if string[i] not in SPECIAL:
                 result[-1] += string[i]
@@ -103,14 +109,75 @@ def new(unit):
         if len(result) == 1:
             return result
         
-        for i in range(len(first)-1, -1, -1):
-            if first[i].isalpha():
-                before = first[:i]
-                after = first[i:]
-                result = [before, "*", after] + result[1:]
-                break
-            
+        try:
+            result = [float(first), ] + ["*", ] + result[1:]
+        except:
+            for i in range(len(first)-1, -1, -1):
+                if first[i].isalpha():
+                    before = first[:i]
+                    after = first[i:]
+                    result = [before, "*", after] + result[1:]
+                    break
+        
+        if result[1] in {"(", ")"}:
+            result = [result[0], ] + ["*", ] + result[1:]
         return result
+    
+    
+    def calculator(L, first = True):
+        #Computes the final value from the list of elements
+        result = SiUnitQuantity(1)
+        if first:
+            result = SiUnitQuantity(L[0])
+            L = L[1:]
+
+        n = 1
+        while n != 0:
+            n = 0
+            m = 0
+            for i in range(len(L)):
+                if isinstance(L[i], str) and L[i] == '(':
+                    if n == 0:
+                        start = i
+                    n += 1
+                if isinstance(L[i], str) and L[i] == ')':
+                    m += 1
+                    if m == n:
+                        finish = i
+                        break
+            if n != 0:
+                parentheses_value = calculator(["*", ] + L[start+1 : finish], first = False)
+                L = L[:start] + [parentheses_value, ] + L[finish+1:]
+                
+        while len(L) != 0:
+            if isinstance(L[-1], SiUnitQuantity):
+                x = L[-1]
+            if isinstance(L[-1], str) and L[-1] == "*":
+                result *= x
+            if isinstance(L[-1], str) and L[-1] == "/":
+                result /= x
+            L = L[:-1]
+        return result
+    
+    
+    SPECIAL = {"(", ")", "*", "/"}
+
+    elems = parser(unit)
+    elems[0] = float(elems[0])
+    
+    if len(elems) == 1:
+        return SiUnitQuantity(elems[0])
+    
+    for i in range(1, len(elems)):
+        if elems[i] in Units.ALL_UNITS:
+            elems[i] = Units.ALL_UNITS[elems[i]]
+        elif elems[i] in SPECIAL:
+            pass
+        else:
+            raise ValueError("String can not be converted to SI object: wrong format.")
+
+    return calculator(elems)
+ 
     
     
 if __name__ == '__main__':
@@ -118,4 +185,4 @@ if __name__ == '__main__':
     x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
     y = SiUnitQuantity(2.0)
 
-    new("1.0m*kg/s")
+    print(new("1.5 kg * m / s"))
