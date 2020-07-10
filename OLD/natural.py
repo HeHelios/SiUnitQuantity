@@ -7,6 +7,7 @@ class Units:
     s = SiUnitQuantity(magnitude = 1, exponents = {"time": 1})
     A = SiUnitQuantity(magnitude = 1, exponents = {"current": 1})
     K = SiUnitQuantity(magnitude = 1, exponents = {"temperature": 1})
+    mol = SiUnitQuantity(magnitude = 1, exponents = {"amount of substance": 1})
     
     #Dependent
     Hz = 1/s
@@ -21,6 +22,23 @@ class Units:
     T = V * s / (m**2)
     H = Ohm * s
 
+
+class Constants:
+    
+    #For user guide
+    SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "temperature": "K", "amount of substance": "mol"}
+    
+    SI_DEPENDENT_UNITS = {"frequency": "Hz", "Force": "N", "energy": "J", "power": "W", "pressure": "Pa", \
+                          "charge": "C", "voltage": "V", "capacitance": "F", "resistance": "Ohm", \
+                          "Magnetic field": "T", "inductance": "H", }
+
+    #For internal code
+    __SI_BASIC_UNITS = {"kg": Units.kg, "m": Units.m, "s": Units.s, "A": Units.A, "K": Units.K, "mol": Units.mol}
+    
+    __SI_DEPENDENT_UNITS = {"Hz": Units.Hz, "N": Units.N, "J": Units.J, "W": Units.W, "Pa": Units.Pa, \
+                          "C": Units.C, "V": Units.V, "F": Units.F, "Ohm": Units.Ohm, \
+                          "T": Units.T, "H": Units.H, }
+
     c = 299792458 * m / s                              #speed of ligtht
     h = 6.62607015e-34 * J * s                         #Planck constant
     hbar = h/(2 * pi)                                  #Planck constant
@@ -28,31 +46,13 @@ class Units:
     eps0 = 8.8541878128e-12 * F / m                    #vacuum electric permittivity
     mu0 = 1.25663706212e-6 * N / (A**2)                #vacuum magnetic permeability
     e = 1.602176634e-19 * C                            #elementary charge
-    #Na =                                              #Avogadro constant
+    Na = 6.02214076e23 / mol                           #Avogadro constant
     kb = 1.380649e-23 * J / K                          #Boltzman constant    
     alph = 7.2973525693e-3                             #fine structure constant
     me = 9.1093837015e-31 * kg                         #electron mass
     mp = 1.67262192369e-27 * kg                        #proton mass
     mn = 1.67492749804e-27 * kg                        #neutron mass
-    sigm = 5.670374419e-8 * W / ( (m**2) * (K**4) )    #Stefan-Boltzman constant
-
-
-class Constants:
-    
-    #For user guide
-    SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "temperature": "K"}
-    
-    SI_DEPENDENT_UNITS = {"frequency": "Hz", "Force": "N", "energy": "J", "power": "W", "pressure": "Pa", \
-                          "charge": "C", "voltage": "V", "capacitance": "F", "resistance": "Ohm", \
-                          "Magnetic field": "T", "inductance": "H", }
-
-    #For internal code
-    __SI_BASIC_UNITS = {"kg": Units.kg, "m": Units.m, "s": Units.s, "A": Units.A, "K": Units.K}
-    
-    __SI_DEPENDENT_UNITS = {"Hz": Units.Hz, "N": Units.N, "J": Units.J, "W": Units.W, "Pa": Units.Pa, \
-                          "C": Units.C, "V": Units.V, "F": Units.F, "Ohm": Units.Ohm, \
-                          "T": Units.T, "H": Units.H, }
-    
+    sigm = 5.670374419e-8 * W / ( (m**2) * (K**4) )    #Stefan-Boltzman constant    
     
     
 class SiUnitQuantity:
@@ -266,10 +266,34 @@ class SiUnitQuantity:
         return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)
 
 
-
+def new(unit):
+    
+    def parser(string):
+        SPECIAL = {"(", ")", "*", "/"}
+        
+        result = ["",]
+        L = len(string)
+        if L == 0:
+            raise ValueError("Can not convert empty string")
+        
+        for i in range(L):
+            if L[i] == " ":
+                continue
+            if L[i] not in SPECIAL:
+                result[-1] += L[i]
+            if L[i] in SPECIAL:
+                result += [L[i], ""]
+                
+        if result[-1] == "":
+            result = result[:-1]
+        return result
+    
+    elems = parser(unit)
+    print(elems)
+    
 if __name__ == '__main__':
  
     x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
     y = SiUnitQuantity(2.0)
 
-    print((x**y).int_units())
+    new("1 J / s")
