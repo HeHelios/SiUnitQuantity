@@ -1,5 +1,24 @@
 SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "temperature": "K", "amount of substance": "mol"}
 
+    #Hz = 1/s
+    #N = kg * m / (s**2)
+    #J = N * m
+    #W = J / s
+    #Pa = N / (m**2)
+    #C = A * s
+    #V = J / C
+    #F = C / V
+    #Ohm = V / A
+    #T = V * s / (m**2)
+    #H = Ohm * s
+
+SI_DEPENDENT_UNITS_DESCRIPT = {"Hz": {"__val__":1, "kg": 0, "m": 0, "s": -1, "A": 0, "K": 0, "mol": 0},
+                               "N": {"__val__":1, "kg": 1, "m": 1, "s": -2, "A": 0, "K": 0, "mol": 0},
+                               "J": {"__val__":1, "kg": 1, "m": 2, "s": -2, "A": 0, "K": 0, "mol": 0},
+                               "W": {"__val__":1, "kg": 1, "m": 2, "s": -3, "A": 0, "K": 0, "mol": 0},
+                               "Pa": {"__val__":1, "kg": 1, "m": -1, "s": -2, "A": 0, "K": 0, "mol": 0},}
+
+USER_UNITS_DESCRIPT = {"1": {"__val__":1, "kg": 0, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0}}
 
 class SiUnitQuantity:
     def __init__(self, magnitude = 1.0, exponents = {"mass": 0, "length": 0, "time": 0, "current": 0, "temperature": 0}):
