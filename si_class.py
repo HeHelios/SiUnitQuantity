@@ -1,9 +1,13 @@
+import numpy as np
+from numpy import linalg
+
 SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "temperature": "K", "amount of substance": "mol"}
 
 
 class SiUnitQuantity:
-
-    Si_BASIC_UNITS_DESCRIPT = {"kg": {"__val__":1, "kg": 1, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},
+    FORMAT = ["kg", "J", "s", "A", "K", "mol"]
+    
+    SI_BASIC_UNITS_DESCRIPT = {"kg": {"__val__":1, "kg": 1, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},
                                "m": {"__val__":1, "kg": 0, "m": 1, "s": 0, "A": 0, "K": 0, "mol": 0},
                                "s": {"__val__":1, "kg": 0, "m": 0, "s": 1, "A": 0, "K": 0, "mol": 0},
                                "A": {"__val__":1, "kg": 0, "m": 0, "s": 0, "A": 1, "K": 0, "mol": 0},
@@ -39,6 +43,8 @@ class SiUnitQuantity:
 
 
     def __str__(self):
+        
+        units_format = SiUnitQuantity.FORMAT
         result = str(self.magnitude) + ' '
         
         numerator = ''
@@ -48,26 +54,60 @@ class SiUnitQuantity:
         
         if self.is_unitless():
             return result[:-1]
-
+        
+        #Linear algebra
+        if len(units_format) != 6:
+            raise ValueError("Full basis of output units should be given.")
+        
+        basic = np.array([self.exponents[key] for key in SI_BASIC_UNITS])
+        
+        ALL_UNITS = SiUnitQuantity.SI_BASIC_UNITS_DESCRIPT.copy()
+        ALL_UNITS.update(SiUnitQuantity.SI_DEPENDENT_UNITS_DESCRIPT)
+        ALL_UNITS.update(SiUnitQuantity.USER_UNITS_DESCRIPT)
+        
+        transform_matrix = [[0]*6 for i in range(6)]        
+        
+        j = 0
+        for unit in units_format:
+            i = 0
+            for key in SI_BASIC_UNITS:
+                basic_unit = SI_BASIC_UNITS[key]
+                transform_matrix[i][j] = ALL_UNITS[unit][basic_unit]
+                i += 1
+            j += 1
+        
+        transform_matrix = np.array(transform_matrix)
+        
+        if linalg.det(transform_matrix) == 0:
+            raise ValueError("Inrevertible set of units.")
+        
+        coefs = linalg.solve(transform_matrix, basic)
+        coefs = {units_format[i]: coefs[i] for i in range(6)}
+        
         #Helper functionfor cool output
         def out_func(unit_exp, name):
             nonlocal numerator, denominator, numerator_num, denominator_num
             
-            if unit_exp > 0:
-                if unit_exp == 1:
+            new_unit_exp = unit_exp
+            if unit_exp.is_integer():
+                new_unit_exp = int(unit_exp)
+            
+            if new_unit_exp > 0:
+                if new_unit_exp == 1:
                     numerator += name + ' * '
                 else:
-                    numerator += name + '^' + str(unit_exp) + ' * '
+                    numerator += name + '^' + str(new_unit_exp) + ' * '
                 numerator_num += 1
-            elif unit_exp < 0:
-                if unit_exp == -1:
+            elif new_unit_exp < 0:
+                if new_unit_exp == -1:
                     denominator += name + ' * '
                 else:
-                    denominator += name + '^' + str(-unit_exp) + ' * '
+                    denominator += name + '^' + str(-new_unit_exp) + ' * '
                 denominator_num += 1
 
-        for unit in SI_BASIC_UNITS:
-            out_func(self.exponents[unit], SI_BASIC_UNITS[unit])
+
+        for unit in coefs:
+            out_func(coefs[unit], unit)
 
         
         if numerator_num == 0:
@@ -93,6 +133,7 @@ class SiUnitQuantity:
             
         result += numerator + '/' + denominator
         return result
+
 
     #arithmetics
     def __add__(self, right):
@@ -232,3 +273,8 @@ class SiUnitQuantity:
     #Converts float exponents to int expotnents
         new_exponents = {key : int(self.exponents[key]) for key in self.exponents.keys()}
         return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)
+
+if __name__ == '__main__':
+ 
+    x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
+    print(x)
