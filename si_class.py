@@ -24,9 +24,16 @@ class SiUnitQuantity:
                                    "F": {"__val__":1, "kg": -1, "m": -2, "s": 4, "A": 2, "K": 0, "mol": 0},
                                    "Ohm": {"__val__":1, "kg": 1, "m": 2, "s": -3, "A": -2, "K": 0, "mol": 0},
                                    "T": {"__val__":1, "kg": 1, "m": 0, "s": -2, "A": -1, "K": 0, "mol": 0},
-                                   "H": {"__val__":1, "kg": 1, "m": 2, "s": -2, "A": -2, "K": 0, "mol": 0},}
+                                   "H": {"__val__":1, "kg": 1, "m": 2, "s": -2, "A": -2, "K": 0, "mol": 0},
+                                   "g": {"__val__":1e-3, "kg": 1, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},}
     
     USER_UNITS_DESCRIPT = {"1": {"__val__":1, "kg": 0, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},}    
+    
+    
+    BASIC_PREFIX = {"Y" : 1e24, "Z": 1e21, "E": 1e18, "P": 1e15, "T": 1e12, "G": 1e9, \
+                    "M": 1e6, "k": 1e3, "c": 1e-2, "m": 1e-3, "u": 1e-6, "n": 1e-9, \
+                    "p": 1e-12, "f": 1e-15, "a": 1e-18, "z": 1e-21, "y":1e-24}
+    
     
     def __init__(self, magnitude = 1.0, exponents = {"mass": 0, "length": 0, "time": 0, "current": 0, "temperature": 0}):
         self.exponents = exponents
@@ -45,7 +52,7 @@ class SiUnitQuantity:
     def __str__(self):
         
         units_format = SiUnitQuantity.FORMAT
-        result = str(self.magnitude) + ' '
+        result = ''
         
         numerator = ''
         denominator = ''        
@@ -132,6 +139,14 @@ class SiUnitQuantity:
             denominator = '(' + denominator + ')'
             
         result += numerator + '/' + denominator
+        
+        #calculating a right number
+        
+        num = self.magnitude
+        for unit in coefs:
+            num /= (ALL_UNITS[unit]["__val__"]**coefs[unit])
+        
+        result = str(num) + ' ' + result
         return result
 
 
@@ -276,5 +291,5 @@ class SiUnitQuantity:
 
 if __name__ == '__main__':
  
-    x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
+    x = SiUnitQuantity(-5, exponents = {"mass": 1, "time": -1})
     print(x)
