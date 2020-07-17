@@ -50,7 +50,6 @@ class SiUnitQuantity:
 
 
     def __str__(self):
-        
         units_format = SiUnitQuantity.FORMAT
         result = ''
         
@@ -120,7 +119,7 @@ class SiUnitQuantity:
                     denominator += name + '^' + str(-new_unit_exp) + ' * '
                 denominator_num += 1
 
-
+        #building a units string
         for unit in coefs:
             out_func(coefs[unit], unit)
 
@@ -149,7 +148,6 @@ class SiUnitQuantity:
         result += numerator + '/' + denominator
         
         #calculating a right number
-        
         num = self.magnitude
         
         for unit in coefs:    
