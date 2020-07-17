@@ -77,9 +77,17 @@ class SiUnitQuantity:
         j = 0
         for unit in units_format:
             i = 0
+            
+            if (unit not in ALL_UNITS) and (unit[1:] not in ALL_UNITS):
+                raise TypeError("Unknown unit.")
+            
+            no_prefix_unit = unit
+            if (unit not in ALL_UNITS) and (unit[0] in SiUnitQuantity.BASIC_PREFIX):
+                no_prefix_unit = unit[1:]
+                
             for key in SI_BASIC_UNITS:
                 basic_unit = SI_BASIC_UNITS[key]
-                transform_matrix[i][j] = ALL_UNITS[unit][basic_unit]
+                transform_matrix[i][j] = ALL_UNITS[no_prefix_unit][basic_unit]
                 i += 1
             j += 1
         
@@ -143,8 +151,14 @@ class SiUnitQuantity:
         #calculating a right number
         
         num = self.magnitude
-        for unit in coefs:
-            num /= (ALL_UNITS[unit]["__val__"]**coefs[unit])
+        
+        for unit in coefs:    
+            no_prefix_unit = unit
+            prefix = 1
+            if (unit not in ALL_UNITS) and (unit[0] in SiUnitQuantity.BASIC_PREFIX):
+                no_prefix_unit = unit[1:]
+                prefix = SiUnitQuantity.BASIC_PREFIX[unit[0]]
+            num /= (prefix * ALL_UNITS[no_prefix_unit]["__val__"])**coefs[unit]
         
         result = str(num) + ' ' + result
         return result
