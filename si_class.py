@@ -300,7 +300,7 @@ class SiUnitQuantity:
     def int_units(self):    
     #Converts float exponents to int expotnents
         new_exponents = {key : int(self.exponents[key]) for key in self.exponents.keys()}
-        return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)        
+        return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)
 
 if __name__ == '__main__':
  

@@ -124,7 +124,7 @@ def set_format(array):
 
 
 #sets output format to basic SI units
-def set_basic_format():
+def set_default_format():
     SiUnitQuantity.FORMAT = SiUnitQuantity.BASIC_FORMAT
 
 
@@ -268,5 +268,6 @@ if __name__ == '__main__':
     print(x)
     set_format(["kg", "J", "s", "A", "K", "mol"])
     print(x)
-    set_basic_format()
+    set_default_format()
     print(x)
+    print(get_unit("J"))
