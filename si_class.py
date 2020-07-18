@@ -5,7 +5,8 @@ SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "tem
 
 
 class SiUnitQuantity:
-    FORMAT = ["kg", "J", "s", "A", "K", "mol"]
+    FORMAT = ["kg", "m", "s", "A", "K", "mol"]
+    BASIC_FORMAT = ["kg", "m", "s", "A", "K", "mol"]
     
     SI_BASIC_UNITS_DESCRIPT = {"kg": {"__val__":1, "kg": 1, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},
                                "m": {"__val__":1, "kg": 0, "m": 1, "s": 0, "A": 0, "K": 0, "mol": 0},
@@ -299,7 +300,7 @@ class SiUnitQuantity:
     def int_units(self):    
     #Converts float exponents to int expotnents
         new_exponents = {key : int(self.exponents[key]) for key in self.exponents.keys()}
-        return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)
+        return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)        
 
 if __name__ == '__main__':
  

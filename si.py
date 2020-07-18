@@ -1,6 +1,10 @@
 from math import pi
 from si_class import SiUnitQuantity
 
+import numpy as np
+from numpy import linalg
+
+SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "temperature": "K", "amount of substance": "mol"}
 
 class Units:
     #For user guide
@@ -78,10 +82,84 @@ class Constants:
     mp = 1.67262192369e-27 * kg                        #proton mass
     mn = 1.67492749804e-27 * kg                        #neutron mass
     sigm = 5.670374419e-8 * W / ( (m**2) * (K**4) )    #Stefan-Boltzman constant    
-    
-    
 
 
+##############################################################################  
+    
+#sets the output format for SiUnitQuantity object 
+def set_format(array):
+    
+    if len(array) != 6:
+        raise ValueError("Full basis of output units should be given.")
+        
+    ALL_UNITS = SiUnitQuantity.SI_BASIC_UNITS_DESCRIPT.copy()
+    ALL_UNITS.update(SiUnitQuantity.SI_DEPENDENT_UNITS_DESCRIPT)
+    ALL_UNITS.update(SiUnitQuantity.USER_UNITS_DESCRIPT)
+        
+    transform_matrix = [[0]*6 for i in range(6)]        
+        
+    j = 0
+    for unit in array:
+        i = 0
+            
+        if (unit not in ALL_UNITS) and (unit[1:] not in ALL_UNITS):
+            raise TypeError("Unknown unit.")
+            
+        no_prefix_unit = unit
+        if (unit not in ALL_UNITS) and (unit[0] in SiUnitQuantity.BASIC_PREFIX):
+            no_prefix_unit = unit[1:]
+                
+        for key in SI_BASIC_UNITS:
+            basic_unit = SI_BASIC_UNITS[key]
+            transform_matrix[i][j] = ALL_UNITS[no_prefix_unit][basic_unit]
+            i += 1
+        j += 1
+        
+    transform_matrix = np.array(transform_matrix)
+        
+    if linalg.det(transform_matrix) == 0:
+        raise ValueError("Inrevertible set of units.")
+    
+    SiUnitQuantity.FORMAT = array
+
+
+#sets output format to basic SI units
+def set_basic_format():
+    SiUnitQuantity.FORMAT = SiUnitQuantity.BASIC_FORMAT
+
+
+#returns currently used format
+def get_format():
+    return SiUnitQuantity.FORMAT.copy()
+
+
+##############################################################################    
+
+#adds the user unit to library memory
+def set_unit(name, unit_instance):
+    pass
+
+def delete_unit(name):
+    pass
+
+#returns the instance of SI unit by its name
+def get_unit(name):
+    ALL_UNITS = Units._SI_BASIC_UNITS.copy()
+    ALL_UNITS.update(Units._SI_DEPENDENT_UNITS)
+    ALL_UNITS.update(Units.USER_UNITS)
+    
+    if name in ALL_UNITS:
+        return ALL_UNITS[name]
+    
+    if (name[0] in Units.BASIC_PREFIX) and (name[1:] in ALL_UNITS):
+        return Units.BASIC_PREFIX[name[0]] * ALL_UNITS[name[1:]]
+    else:
+        raise ValueError("Unknown unit.")
+    
+    
+##############################################################################
+
+#takes a string of the form "1.0 kg/s" and retururns an instance of SiUnitQuantity that corresponds to the string.
 def new(unit):
     
     def parser(string):
@@ -182,11 +260,13 @@ def new(unit):
 
     return calculator(elems)
  
-    
+##############################################################################
     
 if __name__ == '__main__':
  
     x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
-    y = SiUnitQuantity(2.0)
-
-    print(new("1.5 g / ms"))
+    print(x)
+    set_format(["kg", "J", "s", "A", "K", "mol"])
+    print(x)
+    set_basic_format()
+    print(x)
