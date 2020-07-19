@@ -1,3 +1,4 @@
+import warnings
 from math import pi
 from si_class import SiUnitQuantity
 
@@ -133,6 +134,22 @@ def get_format():
     return SiUnitQuantity.FORMAT.copy()
 
 
+#changes some of the units in basis
+def replace(units):
+    result = []
+    
+    for key in units:
+        if key not in SiUnitQuantity.FORMAT:
+            warnings.warn("Some of the units are not in current format. Not all the units will be changed in current format.")
+    
+    for unit in SiUnitQuantity.FORMAT:
+        if unit in units:
+            result.append(units[unit])
+        else:
+            result.append(unit)
+        
+    set_format(result)
+        
 ##############################################################################    
 
 #adds the user unit to library memory
@@ -299,6 +316,8 @@ def new(unit):
 ##############################################################################
     
 if __name__ == '__main__':
+    
+    """
     J = Units.J
     s = Units.s
 
@@ -316,3 +335,11 @@ if __name__ == '__main__':
     print(get_unit("eVs"))
     delete_unit("eVs")
     print(get_unit("eVs"))
+    """
+    
+    eV = 1.6E-19 * Units.J
+    x = 5e20 * eV
+    y = new("100 kJ")
+    a = {"m": "MJ", "t": "s"}
+    replace(a)
+    print(x + y)
