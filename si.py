@@ -137,10 +137,46 @@ def get_format():
 
 #adds the user unit to library memory
 def set_unit(name, unit_instance):
-    pass
+    if not isinstance(unit_instance, SiUnitQuantity):
+        raise TypeError("Wrong argument type. Function requires a SiUnitQuantity instance.")
+        
+    if not isinstance(name, str):
+        raise TypeError("Function requires name of the unit in instance of str.")
+    
+    ALL_UNITS = SiUnitQuantity.SI_BASIC_UNITS_DESCRIPT.copy()
+    ALL_UNITS.update(SiUnitQuantity.SI_DEPENDENT_UNITS_DESCRIPT)
 
+    if name in ALL_UNITS:
+        raise ValueError("Unchangable unit with this name already exists.")
+
+    if  (name[0] in SiUnitQuantity.BASIC_PREFIX) and (name[1:] in ALL_UNITS):
+        raise ValueError("Unit with this name already exists. You may use supported prefixes instead of creating variable with the prefix.")        
+    
+    Units.USER_UNITS[name] = unit_instance
+    val = {}
+    val["__val__"] = unit_instance.magnitude
+    
+    for key in SI_BASIC_UNITS:
+        val[SI_BASIC_UNITS[key]] = unit_instance.exponents[key]
+    
+    SiUnitQuantity.USER_UNITS_DESCRIPT[name] = val
+    
+
+#deletes unit from the library memory
 def delete_unit(name):
-    pass
+
+    ALL_UNITS = SiUnitQuantity.SI_BASIC_UNITS_DESCRIPT.copy()
+    ALL_UNITS.update(SiUnitQuantity.SI_DEPENDENT_UNITS_DESCRIPT)
+
+    if name in ALL_UNITS:
+        raise ValueError("This unit can not be deleted.")
+        
+    if name not in Units.USER_UNITS:
+        raise ValueError("Unknown unit.")
+        
+    del Units.USER_UNITS[name]
+    del SiUnitQuantity.USER_UNITS_DESCRIPT[name]
+
 
 #returns the instance of SI unit by its name
 def get_unit(name):
@@ -263,7 +299,9 @@ def new(unit):
 ##############################################################################
     
 if __name__ == '__main__':
- 
+    J = Units.J
+    s = Units.s
+
     x = SiUnitQuantity(-5, exponents = {"length": 1, "time": -1})
     print(x)
     set_format(["kg", "J", "s", "A", "K", "mol"])
@@ -271,3 +309,10 @@ if __name__ == '__main__':
     set_default_format()
     print(x)
     print(get_unit("J"))
+
+    eVs = 1.6e-19 * J * s
+    set_unit("eVs", eVs)
+    set_format(["kg", "J", "s", "A", "K", "mol"])
+    print(get_unit("eVs"))
+    delete_unit("eVs")
+    print(get_unit("eVs"))

@@ -98,7 +98,20 @@ class SiUnitQuantity:
         
         coefs = linalg.solve(transform_matrix, basic)
         coefs = {units_format[i]: coefs[i] for i in range(6)}
+
         
+        num = self.magnitude
+                
+        for unit in coefs:    
+            no_prefix_unit = unit
+            prefix = 1
+            if (unit not in ALL_UNITS) and (unit[0] in SiUnitQuantity.BASIC_PREFIX):
+                no_prefix_unit = unit[1:]
+                prefix = SiUnitQuantity.BASIC_PREFIX[unit[0]]
+            num /= (prefix * ALL_UNITS[no_prefix_unit]["__val__"])**coefs[unit]        
+        
+        result = str(num) + ' '
+
         #Helper functionfor cool output
         def out_func(unit_exp, name):
             nonlocal numerator, denominator, numerator_num, denominator_num
@@ -148,18 +161,8 @@ class SiUnitQuantity:
             
         result += numerator + '/' + denominator
         
+        
         #calculating a right number
-        num = self.magnitude
-        
-        for unit in coefs:    
-            no_prefix_unit = unit
-            prefix = 1
-            if (unit not in ALL_UNITS) and (unit[0] in SiUnitQuantity.BASIC_PREFIX):
-                no_prefix_unit = unit[1:]
-                prefix = SiUnitQuantity.BASIC_PREFIX[unit[0]]
-            num /= (prefix * ALL_UNITS[no_prefix_unit]["__val__"])**coefs[unit]
-        
-        result = str(num) + ' ' + result
         return result
 
 
@@ -304,5 +307,5 @@ class SiUnitQuantity:
 
 if __name__ == '__main__':
  
-    x = SiUnitQuantity(-5, exponents = {"mass": 1, "time": -1})
-    print(x)
+    x = SiUnitQuantity(1, exponents = {"mass": 1, "time": -2, "length": 2})
+    print(x.__str__())
