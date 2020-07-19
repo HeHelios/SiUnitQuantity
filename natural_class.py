@@ -1,13 +1,8 @@
-import numpy as np
-from numpy import linalg
-
-SI_BASIC_UNITS = {"mass": "kg", "length": "m", "time": "s", "current": "A", "temperature": "K", "amount of substance": "mol"}
-
-
-class SiUnitQuantity:
-    FORMAT = ["kg", "m", "s", "A", "K", "mol"]
-    BASIC_FORMAT = ["kg", "m", "s", "A", "K", "mol"]
+class NaturalUnitQuantity:
     
+    FORMAT = "MeV"
+    BASIC_FORMAT = "eV"
+    """
     SI_BASIC_UNITS_DESCRIPT = {"kg": {"__val__":1, "kg": 1, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},
                                "m": {"__val__":1, "kg": 0, "m": 1, "s": 0, "A": 0, "K": 0, "mol": 0},
                                "s": {"__val__":1, "kg": 0, "m": 0, "s": 1, "A": 0, "K": 0, "mol": 0},
@@ -29,29 +24,26 @@ class SiUnitQuantity:
                                    "g": {"__val__":1e-3, "kg": 1, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},}
     
     USER_UNITS_DESCRIPT = {"1": {"__val__":1, "kg": 0, "m": 0, "s": 0, "A": 0, "K": 0, "mol": 0},}    
-    
+    """
     
     BASIC_PREFIX = {"Y" : 1e24, "Z": 1e21, "E": 1e18, "P": 1e15, "T": 1e12, "G": 1e9, \
                     "M": 1e6, "k": 1e3, "c": 1e-2, "m": 1e-3, "u": 1e-6, "n": 1e-9, \
                     "p": 1e-12, "f": 1e-15, "a": 1e-18, "z": 1e-21, "y":1e-24}
     
     
-    def __init__(self, magnitude = 1.0, exponents = {"mass": 0, "length": 0, "time": 0, "current": 0, "temperature": 0}):
-        self.exponents = exponents
-        for unit in SI_BASIC_UNITS:
-            if unit not in self.exponents:
-                self.exponents[unit] = 0
+    def __init__(self, magnitude = 1.0, exp = 0):
+        self.exp = exp
         self.magnitude = magnitude
 
     def is_unitless(self):
-        return all(val == 0 for val in self.exponents.values())
+        return self.exp == 0
 
     def match_units(self, other):
-        return self.exponents == other.exponents
+        return self.exp == other.exp
 
 
     def __str__(self):
-        units_format = SiUnitQuantity.FORMAT
+        unit_format = NaturalUnitQuantity.FORMAT
         result = ''
         
         numerator = ''
@@ -59,65 +51,25 @@ class SiUnitQuantity:
         numerator_num = 0
         denominator_num = 0
         
-        #Linear algebra
-        if len(units_format) != 6:
-            raise ValueError("Full basis of output units should be given.")
-        
-        basic = np.array([self.exponents[key] for key in SI_BASIC_UNITS])
-        
-        ALL_UNITS = SiUnitQuantity.SI_BASIC_UNITS_DESCRIPT.copy()
-        ALL_UNITS.update(SiUnitQuantity.SI_DEPENDENT_UNITS_DESCRIPT)
-        ALL_UNITS.update(SiUnitQuantity.USER_UNITS_DESCRIPT)
-        
-        transform_matrix = [[0]*6 for i in range(6)]        
-        
-        j = 0
-        for unit in units_format:
-            i = 0
-            
-            if (unit not in ALL_UNITS) and (unit[1:] not in ALL_UNITS):
-                raise TypeError("Unknown unit.")
-            
-            no_prefix_unit = unit
-            if (unit not in ALL_UNITS) and (unit[0] in SiUnitQuantity.BASIC_PREFIX):
-                no_prefix_unit = unit[1:]
-                
-            for key in SI_BASIC_UNITS:
-                basic_unit = SI_BASIC_UNITS[key]
-                transform_matrix[i][j] = ALL_UNITS[no_prefix_unit][basic_unit]
-                i += 1
-            j += 1
-        
-        transform_matrix = np.array(transform_matrix)
-        
-        if linalg.det(transform_matrix) == 0:
-            raise ValueError("Inrevertible set of units.")
-        
-        coefs = linalg.solve(transform_matrix, basic)
-        coefs = {units_format[i]: coefs[i] for i in range(6)}
-
-        #calculating a right number
         num = self.magnitude
-                
-        for unit in coefs:    
-            no_prefix_unit = unit
-            prefix = 1
-            if (unit not in ALL_UNITS) and (unit[0] in SiUnitQuantity.BASIC_PREFIX):
-                no_prefix_unit = unit[1:]
-                prefix = SiUnitQuantity.BASIC_PREFIX[unit[0]]
-            num /= (prefix * ALL_UNITS[no_prefix_unit]["__val__"])**coefs[unit]        
+        
+        prefix = 1
+        if (unit_format[0] in NaturalUnitQuantity.BASIC_PREFIX):
+            prefix = NaturalUnitQuantity.BASIC_PREFIX[unit_format[0]]
+        
+        num /= prefix**self.exp
         
         result = str(num) + ' '
 
         if self.is_unitless():
             return result[:-1]
-        
+
         #Helper functionfor cool output
         def out_func(unit_exp, name):
             nonlocal numerator, denominator, numerator_num, denominator_num
             
             new_unit_exp = unit_exp
-            if unit_exp.is_integer():
+            if (not isinstance(unit_exp, int)) and unit_exp.is_integer():
                 new_unit_exp = int(unit_exp)
             
             if new_unit_exp > 0:
@@ -134,10 +86,8 @@ class SiUnitQuantity:
                 denominator_num += 1
 
         #building a units string
-        for unit in coefs:
-            out_func(coefs[unit], unit)
+        out_func(self.exp, unit_format)
 
-        
         if numerator_num == 0:
             numerator = '1'
         elif numerator_num == 1:
@@ -166,63 +116,62 @@ class SiUnitQuantity:
 
     #arithmetics
     def __add__(self, right):
-        if not isinstance(right, SiUnitQuantity):
+        if not isinstance(right, NaturalUnitQuantity):
             if self.is_unitless():
-                return SiUnitQuantity(magnitude = self.magnitude + right)
+                return NaturalUnitQuantity(magnitude = self.magnitude + right)
             else:
-                raise TypeError("Unit mismatch in adding SiUnitQuantity and a non-SiUnitQuantity")
+                raise TypeError("Unit mismatch in adding NaturalUnitQuantity and a non-NaturalUnitQuantity")
         if not self.match_units(right):
-            raise TypeError("Unit mismatch in adding two SiUnitQuantities")
-        return SiUnitQuantity(magnitude = self.magnitude + right.magnitude, exponents = dict(self.exponents))
+            raise TypeError("Unit mismatch in adding two NaturalUnitQuantities")
+        return NaturalUnitQuantity(magnitude = self.magnitude + right.magnitude, exp = self.exp)
 
     def __radd__(self, right):
         return self + right
 
 
     def __sub__(self, right):
-        if not isinstance(right, SiUnitQuantity):
+        if not isinstance(right, NaturalUnitQuantity):
             if self.is_unitless():
-                return SiUnitQuantity(magnitude = self.magnitude - right)
+                return NaturalUnitQuantity(magnitude = self.magnitude - right)
             else:
-                raise TypeError("Unit mismatch in substructing SiUnitQuantity and a non-SiUnitQuantity")
+                raise TypeError("Unit mismatch in substructing NaturalUnitQuantity and a non-NaturalUnitQuantity")
         if not self.match_units(right):
-            raise TypeError("Unit mismatch in substructing two SiUnitQuantities")
-        return SiUnitQuantity(magnitude = self.magnitude - right.magnitude, exponents = dict(self.exponents))
+            raise TypeError("Unit mismatch in substructing two NaturalUnitQuantities")
+        return NaturalUnitQuantity(magnitude = self.magnitude - right.magnitude, exp = self.exp)
 
     def __rsub__(self, right):
-        if not isinstance(right, SiUnitQuantity):
+        if not isinstance(right, NaturalUnitQuantity):
             if self.is_unitless():
-                return SiUnitQuantity(magnitude = right - self.magnitude)
-            raise TypeError("Unit mismatch in substructing SiUnitQuantity and a non-SiUnitQuantity")
+                return NaturalUnitQuantity(magnitude = right - self.magnitude)
+            raise TypeError("Unit mismatch in substructing NaturalUnitQuantity and a non-NaturalUnitQuantity")
 
     
     def __mul__(self, right):
-        if not isinstance(right, SiUnitQuantity):
-            return SiUnitQuantity(self.magnitude * right, exponents = dict(self.exponents))              
-        new_exponents = {key: self.exponents[key] + right.exponents[key] for key in self.exponents.keys()}
-        return SiUnitQuantity(self.magnitude * right.magnitude, exponents = new_exponents)
+        if not isinstance(right, NaturalUnitQuantity):
+            return NaturalUnitQuantity(self.magnitude * right, exp = self.exp)              
+        new_exp = self.exp + right.exp
+        return NaturalUnitQuantity(self.magnitude * right.magnitude, exp = new_exp)
 
     def __rmul__(self, right):
         return self*right
 
     def __truediv__(self, right):
-        if not isinstance(right, SiUnitQuantity):
-            return SiUnitQuantity(self.magnitude / right, exponents = dict(self.exponents))
-        new_exponents = {key: self.exponents[key] - right.exponents[key] for key in self.exponents.keys()}
-        return SiUnitQuantity(self.magnitude / right.magnitude, exponents = new_exponents)
+        if not isinstance(right, NaturalUnitQuantity):
+            return NaturalUnitQuantity(self.magnitude / right, exp = self.exp)
+        new_exp = self.exp - right.exp
+        return NaturalUnitQuantity(self.magnitude / right.magnitude, exp = new_exp)
 
     def __rtruediv__(self, right):
-        if not isinstance(right, SiUnitQuantity):
-            new_exponents = {key: -self.exponents[key] for key in self.exponents.keys()}
-            return SiUnitQuantity(right/self.magnitude, exponents  = new_exponents)
+        if not isinstance(right, NaturalUnitQuantity):
+            return NaturalUnitQuantity(right/self.magnitude, exp  = -self.exp)
 
     def __pow__(self, right):
-        if not isinstance(right, SiUnitQuantity):
-            new_exponents = {key: self.exponents[key] * right for key in self.exponents.keys()}
-            return SiUnitQuantity(magnitude = self.magnitude ** right, exponents = new_exponents)
-        elif isinstance(right, SiUnitQuantity) and right.is_unitless():
-            new_exponents = {key: self.exponents[key] * right.magnitude for key in self.exponents.keys()}
-            return SiUnitQuantity(magnitude = self.magnitude ** right.magnitude, exponents = new_exponents) 
+        if not isinstance(right, NaturalUnitQuantity):
+            new_exp = self.exp * right
+            return NaturalUnitQuantity(magnitude = self.magnitude ** right, exp = new_exp)
+        elif isinstance(right, NaturalUnitQuantity) and right.is_unitless():
+            new_exp = self.exp * right.magnitude
+            return NaturalUnitQuantity(magnitude = self.magnitude ** right.magnitude, exp = new_exp) 
         else:
             raise ValueError('Needs unitless number for a power.')
     
@@ -233,20 +182,20 @@ class SiUnitQuantity:
         
     #equalities and inequalities
     def __eq__(self, other):
-        if not isinstance(other, SiUnitQuantity):
+        if not isinstance(other, NaturalUnitQuantity):
             if self.is_unitless():
                 return self.magnitude == other
             else:
-                raise TypeError("Unit mismatch in comparing SiUnitQuantity and a non-SiUnitQuantity")
+                raise TypeError("Unit mismatch in comparing NaturalUnitQuantity and a non-NaturalUnitQuantity")
         if not self.match_units(other):
-            raise TypeError("Unit mismatch in comparing two SiUnitQuantities")
+            raise TypeError("Unit mismatch in comparing two NaturalUnitQuantities")
         return self.magnitude == other.magnitude
 
     def __ne__(self, other):
         return not self == other
         
     def __lt__(self, right):  #<
-        if not isinstance(right, SiUnitQuantity):
+        if not isinstance(right, NaturalUnitQuantity):
             if self.is_unitless():
                 return self.magnitude < right
             raise ValueError('Quantities with different units cannot be compared.')
@@ -257,7 +206,7 @@ class SiUnitQuantity:
     
 
     def __gt__(self, right):  #>
-        if not isinstance(right, SiUnitQuantity):
+        if not isinstance(right, NaturalUnitQuantity):
             if self.is_unitless():
                 return self.magnitude > right
             raise ValueError('Quantities with different units cannot be compared.')
@@ -267,7 +216,7 @@ class SiUnitQuantity:
         raise ValueError('Quantities with different units cannot be compared')
         
     def __le__(self, right):  #<=
-        if not isinstance(right, SiUnitQuantity):
+        if not isinstance(right, NaturalUnitQuantity):
             if self.is_unitless():
                 return self.magnitude <= right
             raise ValueError('Quantities with different units cannot be compared.')
@@ -277,7 +226,7 @@ class SiUnitQuantity:
         raise ValueError('Quantities with different units cannot be compared')            
 
     def __ge__(self, right):  #>=
-        if not isinstance(right, SiUnitQuantity):
+        if not isinstance(right, NaturalUnitQuantity):
             if self.is_unitless():
                 return self.magnitude >= right
             raise ValueError('Quantities with different units cannot be compared.')
@@ -287,7 +236,7 @@ class SiUnitQuantity:
         raise ValueError('Quantities with different units cannot be compared')
         
     def __abs__(self):
-        return SiUnitQuantity(magnitude = abs(self.magnitude), exponents = self.exponents)
+        return NaturalUnitQuantity(magnitude = abs(self.magnitude), exp = self.exp)
     
     def __int__(self):
         return int(self.magnitude)
@@ -296,14 +245,14 @@ class SiUnitQuantity:
         return float(self.magnitude)
     
     def __round__(self, digits = 0):
-        return SiUnitQuantity(magnitude = round(self.magnitude, digits), exponents = self.exponents)
+        return NaturalUnitQuantity(magnitude = round(self.magnitude, digits), exp = self.exp)
     
     def int_units(self):    
     #Converts float exponents to int expotnents
-        new_exponents = {key : int(self.exponents[key]) for key in self.exponents.keys()}
-        return SiUnitQuantity(magnitude = self.magnitude, exponents = new_exponents)
+        new_exp = int(self.exp)
+        return NaturalUnitQuantity(magnitude = self.magnitude, exp = new_exp)
 
 if __name__ == '__main__':
  
-    x = SiUnitQuantity(1)
+    x = NaturalUnitQuantity(-4.3e6, exp = 0)
     print(x)
